@@ -9,7 +9,7 @@ from aera import AeraDevice
 
 from homeassistant.components.fan import FanEntity, FanEntityFeature
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -22,9 +22,20 @@ async def async_setup_entry(
 ) -> None:
     """Set up Aera fan entities."""
     coordinator: AeraCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        AeraFanEntity(coordinator, dsn) for dsn in coordinator.data
-    )
+    tracked: set[str] = set()
+
+    @callback
+    def _add_entities(dsns: set[str] | None = None) -> None:
+        new_dsns = (dsns or set(coordinator.data.keys())) - tracked
+        if not new_dsns:
+            return
+        tracked.update(new_dsns)
+        async_add_entities(
+            AeraFanEntity(coordinator, dsn) for dsn in new_dsns
+        )
+
+    _add_entities()
+    coordinator.register_new_device_callback(_add_entities)
 
 
 class AeraFanEntity(CoordinatorEntity[AeraCoordinator], FanEntity):
@@ -52,6 +63,7 @@ class AeraFanEntity(CoordinatorEntity[AeraCoordinator], FanEntity):
             "manufacturer": "Aera",
             "model": device.device_type.name.replace("_", " ").title(),
             "sw_version": device.firmware_version,
+            "suggested_area": device.room_name,
         }
 
     @property

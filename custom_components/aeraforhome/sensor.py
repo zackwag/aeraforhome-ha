@@ -8,7 +8,7 @@ from aera import AeraDevice
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -21,11 +21,22 @@ async def async_setup_entry(
 ) -> None:
     """Set up Aera sensor entities."""
     coordinator: AeraCoordinator = hass.data[DOMAIN][entry.entry_id]
-    entities: list[SensorEntity] = []
-    for dsn in coordinator.data:
-        entities.append(AeraFragranceNameSensor(coordinator, dsn))
-        entities.append(AeraFragranceRemainingSensor(coordinator, dsn))
-    async_add_entities(entities)
+    tracked: set[str] = set()
+
+    @callback
+    def _add_entities(dsns: set[str] | None = None) -> None:
+        new_dsns = (dsns or set(coordinator.data.keys())) - tracked
+        if not new_dsns:
+            return
+        tracked.update(new_dsns)
+        entities: list[SensorEntity] = []
+        for dsn in new_dsns:
+            entities.append(AeraFragranceNameSensor(coordinator, dsn))
+            entities.append(AeraFragranceRemainingSensor(coordinator, dsn))
+        async_add_entities(entities)
+
+    _add_entities()
+    coordinator.register_new_device_callback(_add_entities)
 
 
 class AeraBaseSensor(CoordinatorEntity[AeraCoordinator], SensorEntity):
@@ -50,6 +61,7 @@ class AeraBaseSensor(CoordinatorEntity[AeraCoordinator], SensorEntity):
             "manufacturer": "Aera",
             "model": device.device_type.name.replace("_", " ").title(),
             "sw_version": device.firmware_version,
+            "suggested_area": device.room_name,
         }
 
     @property
