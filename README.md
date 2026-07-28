@@ -6,12 +6,19 @@ Home Assistant custom integration for [Aera for Home](https://www.theaerastore.c
 
 ## Features
 
-- **Fan entity** per device: power on/off, intensity control via speed percentage
-- **Fragrance sensor**: shows the current fragrance name
-- **Remaining sensor**: shows fragrance remaining percentage
+- **Fan entity**: power on/off, intensity control with optimistic state updates
+- **Schedule management**: enable/disable, start/end time, days, intensity per schedule slot
+- **Session control**: start timed fragrance sessions (2, 4, or 8 hours)
+- **Fragrance sensors**: current fragrance name, remaining percentage, fragrance code
+- **QR code image**: generated QR code for the fragrance link (Mini devices)
+- **Eject button**: remotely eject the fragrance cartridge (full-size devices)
+- **Device monitoring**: connectivity status, cartridge presence, error/problem detection
+- **Diagnostics**: full device state dump for troubleshooting
+- **Reauth flow**: automatic re-authentication prompt when credentials expire
 - Supports all Aera device types: Aera 1, 2, 3, 3.1, and Mini
-- User-assigned room names from the Aera app are used as device names
-- Fragrance names resolved from the Aera catalog (including Mini short codes)
+- Room names from the Aera app auto-suggest Home Assistant areas
+- New devices discovered automatically without reloading
+- Efficient polling: device state every 60s, schedules every 5 minutes
 
 ## Installation
 
@@ -40,9 +47,53 @@ Each Aera device creates:
 
 | Entity | Type | Description |
 |--------|------|-------------|
-| Fan | `fan` | Power on/off, intensity (1-10 or 1-5 mapped to percentage) |
+| Diffuser | `fan` | Power on/off, intensity (mapped to percentage) |
+| Connectivity | `binary_sensor` | Connected/Disconnected (online status) |
+| Problem | `binary_sensor` | On when device reports an error condition |
 | Fragrance | `sensor` | Current fragrance name |
 | Fragrance remaining | `sensor` | Percentage remaining (0-100%) |
+| Session time remaining | `sensor` | Minutes left in active session (Aera 3/3.1/Mini) |
+| Session | `select` | Start/stop timed sessions: Off, 2, 4, or 8 hours (Aera 3/3.1/Mini) |
+| Fragrance code | `sensor` | 3-letter fragrance code for manual entry (Mini only) |
+| Fragrance QR code | `image` | Generated QR code image for the fragrance (Mini only) |
+| Cartridge | `binary_sensor` | Plugged in/Unplugged (full-size only) |
+| Eject cartridge | `button` | Eject the cartridge; unavailable if none inserted (full-size only) |
+
+Each active schedule slot adds:
+
+| Entity | Type | Description |
+|--------|------|-------------|
+| Schedule N | `switch` | Enable/disable the schedule |
+| Schedule N start time | `time` | When the schedule starts |
+| Schedule N end time | `time` | When the schedule ends |
+| Schedule N days | `select` | Every day, Weekdays, or Weekends |
+| Schedule N intensity | `number` | Fragrance intensity level (slider) |
+
+## Services
+
+### `aeraforhome.create_schedule`
+
+Create a new fragrance schedule on a device.
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `entity_id` | Yes | Any entity belonging to the target device |
+| `start_time` | Yes | Start time (HH:MM:SS) |
+| `end_time` | Yes | End time (HH:MM:SS) |
+| `days` | No | `every_day` (default), `weekdays`, or `weekends` |
+| `intensity` | No | 1-10 (default: 5) |
+
+### `aeraforhome.delete_schedule`
+
+Delete (deactivate) a schedule.
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `entity_id` | Yes | The schedule switch entity to delete |
+
+## Diagnostics
+
+Go to **Settings > Devices & Services > Aera for Home > 3-dot menu > Download diagnostics** to get a full dump of device state and schedule data for troubleshooting.
 
 ## Disclaimer
 

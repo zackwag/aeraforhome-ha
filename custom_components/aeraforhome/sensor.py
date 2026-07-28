@@ -33,6 +33,11 @@ async def async_setup_entry(
         for dsn in new_dsns:
             entities.append(AeraFragranceNameSensor(coordinator, dsn))
             entities.append(AeraFragranceRemainingSensor(coordinator, dsn))
+            device = coordinator.data[dsn].device
+            if device.has_session_feature:
+                entities.append(AeraSessionTimeSensor(coordinator, dsn))
+            if device.device_type.is_mini:
+                entities.append(AeraFragranceCodeSensor(coordinator, dsn))
         async_add_entities(entities)
 
     _add_entities()
@@ -50,7 +55,7 @@ class AeraBaseSensor(CoordinatorEntity[AeraCoordinator], SensorEntity):
 
     @property
     def _device(self) -> AeraDevice:
-        return self.coordinator.data[self._dsn]
+        return self.coordinator.data[self._dsn].device
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -98,3 +103,39 @@ class AeraFragranceRemainingSensor(AeraBaseSensor):
     @property
     def native_value(self) -> int | None:
         return self._device.fragrance_remaining
+
+
+class AeraSessionTimeSensor(AeraBaseSensor):
+    """Sensor for session time remaining."""
+
+    _attr_name = "Session time remaining"
+    _attr_native_unit_of_measurement = "min"
+    _attr_icon = "mdi:timer-sand"
+
+    def __init__(self, coordinator: AeraCoordinator, dsn: str) -> None:
+        super().__init__(coordinator, dsn)
+        self._attr_unique_id = f"{dsn}_session_time_remaining"
+
+    @property
+    def native_value(self) -> int | None:
+        if not self._device.session_active:
+            return None
+        return self._device.session_time_remaining
+
+
+class AeraFragranceCodeSensor(AeraBaseSensor):
+    """Sensor for the fragrance code (Mini devices)."""
+
+    _attr_name = "Fragrance code"
+    _attr_icon = "mdi:numeric"
+
+    def __init__(self, coordinator: AeraCoordinator, dsn: str) -> None:
+        super().__init__(coordinator, dsn)
+        self._attr_unique_id = f"{dsn}_fragrance_code"
+
+    @property
+    def native_value(self) -> str | None:
+        info = self._device.fragrance_info
+        if info and info.fragrance_id:
+            return info.fragrance_id
+        return None

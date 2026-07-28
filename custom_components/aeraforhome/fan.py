@@ -52,7 +52,7 @@ class AeraFanEntity(CoordinatorEntity[AeraCoordinator], FanEntity):
 
     @property
     def _device(self) -> AeraDevice:
-        return self.coordinator.data[self._dsn]
+        return self.coordinator.data[self._dsn].device
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -95,21 +95,28 @@ class AeraFanEntity(CoordinatorEntity[AeraCoordinator], FanEntity):
         await self.coordinator.api.set_power(self._dsn, True)
         if percentage is not None:
             await self._async_set_percentage(percentage)
+        self._device.update_properties({"power_state": 1})
+        self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self.coordinator.api.set_power(self._dsn, False)
+        self._device.update_properties({"power_state": 0})
+        self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
     async def async_set_percentage(self, percentage: int) -> None:
         await self._async_set_percentage(percentage)
+        self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
     async def _async_set_percentage(self, percentage: int) -> None:
         if percentage == 0:
             await self.coordinator.api.set_power(self._dsn, False)
+            self._device.update_properties({"power_state": 0})
             return
         max_intensity = self._device.max_intensity
         level = math.ceil(percentage * max_intensity / 100)
         level = max(1, min(level, max_intensity))
         await self.coordinator.api.set_intensity(self._dsn, level)
+        self._device.update_properties({"intensity_state": level})

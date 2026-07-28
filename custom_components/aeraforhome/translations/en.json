@@ -6,6 +6,13 @@
           "email": "Email",
           "password": "Password"
         }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Aera for Home",
+        "description": "Your Aera credentials have expired. Please enter your new password.",
+        "data": {
+          "password": "Password"
+        }
       }
     },
     "error": {
@@ -13,7 +20,8 @@
       "unknown": "Unexpected error"
     },
     "abort": {
-      "already_configured": "Account already configured"
+      "already_configured": "Account already configured",
+      "reauth_successful": "Re-authentication successful"
     }
   }
 }

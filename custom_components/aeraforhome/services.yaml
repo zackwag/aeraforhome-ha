@@ -1,0 +1,60 @@
+create_schedule:
+  name: Create schedule
+  description: Create a new fragrance schedule on a device.
+  fields:
+    entity_id:
+      name: Device entity
+      description: Any entity belonging to the target device (e.g., the fan entity).
+      required: true
+      selector:
+        entity:
+          integration: aeraforhome
+    start_time:
+      name: Start time
+      description: Schedule start time (HH:MM:SS format).
+      required: true
+      example: "18:00:00"
+      selector:
+        time:
+    end_time:
+      name: End time
+      description: Schedule end time (HH:MM:SS format).
+      required: true
+      example: "22:00:00"
+      selector:
+        time:
+    days:
+      name: Days
+      description: Which days the schedule runs.
+      default: every_day
+      selector:
+        select:
+          options:
+            - label: Every day
+              value: every_day
+            - label: Weekdays
+              value: weekdays
+            - label: Weekends
+              value: weekends
+    intensity:
+      name: Intensity
+      description: Fragrance intensity level.
+      default: 5
+      selector:
+        number:
+          min: 1
+          max: 10
+          step: 1
+
+delete_schedule:
+  name: Delete schedule
+  description: Delete (deactivate) a schedule.
+  fields:
+    entity_id:
+      name: Schedule switch
+      description: The schedule switch entity to delete.
+      required: true
+      selector:
+        entity:
+          integration: aeraforhome
+          domain: switch
