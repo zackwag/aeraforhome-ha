@@ -8,6 +8,7 @@ from aera import AeraDevice
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -47,6 +48,7 @@ class AeraScheduleIntensity(CoordinatorEntity[AeraCoordinator], NumberEntity):
     _attr_native_min_value = 1
     _attr_native_step = 1
     _attr_mode = NumberMode.SLIDER
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator: AeraCoordinator, dsn: str, slot_idx: int) -> None:
         super().__init__(coordinator)

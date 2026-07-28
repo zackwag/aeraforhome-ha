@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 import qrcode
@@ -67,7 +67,7 @@ class AeraFragranceQrImage(CoordinatorEntity[AeraCoordinator], ImageEntity):
         ImageEntity.__init__(self, coordinator.hass)
         self._dsn = dsn
         self._attr_unique_id = f"{dsn}_fragrance_qr"
-        self._attr_image_last_updated = datetime.now()
+        self._attr_image_last_updated = datetime.now(tz=timezone.utc)
         self._qr_url: str | None = None
         self._qr_bytes: bytes | None = None
 
@@ -107,5 +107,5 @@ class AeraFragranceQrImage(CoordinatorEntity[AeraCoordinator], ImageEntity):
             self._qr_bytes = await self.hass.async_add_executor_job(
                 _generate_qr_png, url
             )
-            self._attr_image_last_updated = datetime.now()
+            self._attr_image_last_updated = datetime.now(tz=timezone.utc)
         return self._qr_bytes

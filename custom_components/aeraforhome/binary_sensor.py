@@ -11,6 +11,7 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -51,6 +52,7 @@ class AeraConnectivitySensor(CoordinatorEntity[AeraCoordinator], BinarySensorEnt
     _attr_has_entity_name = True
     _attr_name = "Connectivity"
     _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator: AeraCoordinator, dsn: str) -> None:
         super().__init__(coordinator)
@@ -121,6 +123,7 @@ class AeraDeviceProblemSensor(CoordinatorEntity[AeraCoordinator], BinarySensorEn
     _attr_has_entity_name = True
     _attr_name = "Problem"
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator: AeraCoordinator, dsn: str) -> None:
         super().__init__(coordinator)

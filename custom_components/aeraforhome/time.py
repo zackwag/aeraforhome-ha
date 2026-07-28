@@ -9,6 +9,7 @@ from aera import AeraDevice
 
 from homeassistant.components.time import TimeEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -56,6 +57,7 @@ class AeraScheduleBaseTime(CoordinatorEntity[AeraCoordinator], TimeEntity):
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:clock-outline"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator: AeraCoordinator, dsn: str, slot_idx: int) -> None:
         super().__init__(coordinator)

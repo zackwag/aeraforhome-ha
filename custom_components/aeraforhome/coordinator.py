@@ -13,6 +13,7 @@ from aera.api import AeraAuthError, AeraApiError
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, SCAN_INTERVAL_SECONDS, SCHEDULE_POLL_INTERVAL_SECONDS
@@ -59,6 +60,7 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
         self._cached_schedules: dict[str, list[AeraScheduleSlot]] = {}
         self.new_device_callbacks: list[callback] = []
         self.schedule_change_callbacks: list[callback] = []
+        self.config_entry_id: str | None = None
 
     def register_new_device_callback(self, cb: callback) -> None:
         """Register a callback to be called when new devices are discovered."""
@@ -109,6 +111,9 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
             }
             if self._known_schedule_keys and current_schedule_keys != self._known_schedule_keys:
                 _LOGGER.debug("Schedule change detected")
+                removed_keys = self._known_schedule_keys - current_schedule_keys
+                if removed_keys:
+                    self._remove_schedule_entities(removed_keys)
                 for cb in self.schedule_change_callbacks:
                     cb()
             self._known_schedule_keys = current_schedule_keys
@@ -118,6 +123,19 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
             raise ConfigEntryAuthFailed from err
         except AeraApiError as err:
             raise UpdateFailed(f"Error communicating with Aera API: {err}") from err
+
+    def _remove_schedule_entities(self, removed_keys: set[int]) -> None:
+        """Remove entities for schedules that no longer exist."""
+        if not self.config_entry_id:
+            return
+        ent_reg = er.async_get(self.hass)
+        entries = er.async_entries_for_config_entry(ent_reg, self.config_entry_id)
+        for entry in entries:
+            for key in removed_keys:
+                if f"_schedule_{key}" in entry.unique_id:
+                    _LOGGER.debug("Removing entity %s for deleted schedule %s", entry.entity_id, key)
+                    ent_reg.async_remove(entry.entity_id)
+                    break
 
     async def _fetch_schedules(self, device: AeraDevice) -> list[AeraScheduleSlot]:
         """Fetch active schedules and their actions for a device."""
