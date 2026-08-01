@@ -112,6 +112,10 @@ class AeraScheduleStartTime(AeraScheduleBaseTime):
         await self.coordinator.api.update_schedule(
             self._dsn, self._schedule_key, {"start_time_each_day": time_str}
         )
+        slot = self._slot
+        if slot:
+            slot.start_time = time_str
+        self.async_write_ha_state()
         self.coordinator.force_schedule_refresh()
         await self.coordinator.async_request_refresh()
 
@@ -136,5 +140,9 @@ class AeraScheduleEndTime(AeraScheduleBaseTime):
         await self.coordinator.api.update_schedule(
             self._dsn, self._schedule_key, {"end_time_each_day": time_str}
         )
+        slot = self._slot
+        if slot:
+            slot.end_time = time_str
+        self.async_write_ha_state()
         self.coordinator.force_schedule_refresh()
         await self.coordinator.async_request_refresh()

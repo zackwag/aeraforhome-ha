@@ -92,6 +92,10 @@ class AeraScheduleSwitch(CoordinatorEntity[AeraCoordinator], SwitchEntity):
         await self.coordinator.api.update_schedule(
             self._dsn, self._schedule_key, {"active": True}
         )
+        slot = self._slot
+        if slot:
+            slot.active = True
+        self.async_write_ha_state()
         self.coordinator.force_schedule_refresh()
         await self.coordinator.async_request_refresh()
 
@@ -99,5 +103,9 @@ class AeraScheduleSwitch(CoordinatorEntity[AeraCoordinator], SwitchEntity):
         await self.coordinator.api.update_schedule(
             self._dsn, self._schedule_key, {"active": False}
         )
+        slot = self._slot
+        if slot:
+            slot.active = False
+        self.async_write_ha_state()
         self.coordinator.force_schedule_refresh()
         await self.coordinator.async_request_refresh()

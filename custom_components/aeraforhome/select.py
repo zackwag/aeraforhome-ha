@@ -151,6 +151,10 @@ class AeraScheduleDays(CoordinatorEntity[AeraCoordinator], SelectEntity):
         await self.coordinator.api.update_schedule(
             self._dsn, self._schedule_key, {"days_of_week": days}
         )
+        slot = self._slot
+        if slot:
+            slot.days_of_week = days
+        self.async_write_ha_state()
         self.coordinator.force_schedule_refresh()
         await self.coordinator.async_request_refresh()
 
@@ -197,7 +201,10 @@ class AeraSessionSelect(CoordinatorEntity[AeraCoordinator], SelectEntity):
     async def async_select_option(self, option: str) -> None:
         duration = SESSION_DURATIONS[option]
         if duration == 0:
-            await self.coordinator.api.stop_session(self._dsn)
+            await self.coordinator.api.set_power(self._dsn, False)
+            self._device.update_properties({"power_state": 0, "session_state": 0, "session_time_left": 0})
         else:
             await self.coordinator.api.start_session(self._dsn, duration)
+            self._device.update_properties({"power_state": 1, "session_state": 1, "session_time_left": duration})
+        self.async_write_ha_state()
         await self.coordinator.async_request_refresh()

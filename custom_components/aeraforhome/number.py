@@ -117,5 +117,7 @@ class AeraScheduleIntensity(CoordinatorEntity[AeraCoordinator], NumberEntity):
                     "in_range": False,
                 },
             )
+        slot.intensity = int_value
+        self.async_write_ha_state()
         self.coordinator.force_schedule_refresh()
         await self.coordinator.async_request_refresh()
