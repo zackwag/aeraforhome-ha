@@ -11,7 +11,6 @@ Home Assistant custom integration for [Aera for Home](https://www.theaerastore.c
 - **Session control**: start timed fragrance sessions (2, 4, or 8 hours)
 - **Fragrance sensors**: current fragrance name, remaining percentage, fragrance code
 - **QR code image**: generated QR code for the fragrance link (Mini devices)
-- **Eject button**: remotely eject the fragrance cartridge (full-size devices)
 - **Device monitoring**: connectivity status, cartridge presence, error/problem detection
 - **Diagnostics**: full device state dump for troubleshooting
 - **Reauth flow**: automatic re-authentication prompt when credentials expire
@@ -57,7 +56,6 @@ Each Aera device creates:
 | Fragrance code | `sensor` | 3-letter fragrance code for manual entry (Mini only) |
 | Fragrance QR code | `image` | Generated QR code image for the fragrance (Mini only) |
 | Cartridge | `binary_sensor` | Plugged in/Unplugged (full-size only) |
-| Eject cartridge | `button` | Eject the cartridge; unavailable if none inserted (full-size only) |
 
 Each active schedule slot adds:
 

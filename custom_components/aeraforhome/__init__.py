@@ -19,7 +19,6 @@ from .coordinator import AeraCoordinator
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
-    Platform.BUTTON,
     Platform.FAN,
     Platform.IMAGE,
     Platform.NUMBER,
