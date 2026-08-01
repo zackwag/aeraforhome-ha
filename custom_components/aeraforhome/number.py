@@ -53,9 +53,8 @@ class AeraScheduleIntensity(CoordinatorEntity[AeraCoordinator], NumberEntity):
     def __init__(self, coordinator: AeraCoordinator, dsn: str, slot_idx: int) -> None:
         super().__init__(coordinator)
         self._dsn = dsn
-        self._slot_idx = slot_idx
-        slot = self._slot
-        self._attr_unique_id = f"{dsn}_schedule_{slot.schedule_key}_intensity"
+        self._schedule_key = coordinator.data[dsn].schedules[slot_idx].schedule_key
+        self._attr_unique_id = f"{dsn}_schedule_{self._schedule_key}_intensity"
         self._attr_name = f"Schedule {slot_idx + 1} intensity"
 
     @property
@@ -63,8 +62,11 @@ class AeraScheduleIntensity(CoordinatorEntity[AeraCoordinator], NumberEntity):
         return self.coordinator.data[self._dsn].device
 
     @property
-    def _slot(self) -> AeraScheduleSlot:
-        return self.coordinator.data[self._dsn].schedules[self._slot_idx]
+    def _slot(self) -> AeraScheduleSlot | None:
+        for slot in self.coordinator.data[self._dsn].schedules:
+            if slot.schedule_key == self._schedule_key:
+                return slot
+        return None
 
     @property
     def native_max_value(self) -> float:
@@ -84,16 +86,19 @@ class AeraScheduleIntensity(CoordinatorEntity[AeraCoordinator], NumberEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and self._slot_idx < len(
-            self.coordinator.data[self._dsn].schedules
-        )
+        return super().available and self._slot is not None
 
     @property
     def native_value(self) -> float | None:
-        return float(self._slot.intensity)
+        slot = self._slot
+        if not slot:
+            return None
+        return float(slot.intensity)
 
     async def async_set_native_value(self, value: float) -> None:
         slot = self._slot
+        if not slot:
+            return
         int_value = int(value)
         if slot.action_key:
             await self.coordinator.api.update_schedule_action(
@@ -101,7 +106,7 @@ class AeraScheduleIntensity(CoordinatorEntity[AeraCoordinator], NumberEntity):
             )
         else:
             await self.coordinator.api.create_schedule_action(
-                slot.schedule_key,
+                self._schedule_key,
                 {
                     "name": "set_intensity_sched",
                     "value": str(int_value),

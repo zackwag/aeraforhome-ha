@@ -108,9 +108,8 @@ class AeraScheduleDays(CoordinatorEntity[AeraCoordinator], SelectEntity):
     def __init__(self, coordinator: AeraCoordinator, dsn: str, slot_idx: int) -> None:
         super().__init__(coordinator)
         self._dsn = dsn
-        self._slot_idx = slot_idx
-        slot = self._slot
-        self._attr_unique_id = f"{dsn}_schedule_{slot.schedule_key}_days"
+        self._schedule_key = coordinator.data[dsn].schedules[slot_idx].schedule_key
+        self._attr_unique_id = f"{dsn}_schedule_{self._schedule_key}_days"
         self._attr_name = f"Schedule {slot_idx + 1} days"
 
     @property
@@ -118,8 +117,11 @@ class AeraScheduleDays(CoordinatorEntity[AeraCoordinator], SelectEntity):
         return self.coordinator.data[self._dsn].device
 
     @property
-    def _slot(self) -> AeraScheduleSlot:
-        return self.coordinator.data[self._dsn].schedules[self._slot_idx]
+    def _slot(self) -> AeraScheduleSlot | None:
+        for slot in self.coordinator.data[self._dsn].schedules:
+            if slot.schedule_key == self._schedule_key:
+                return slot
+        return None
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -135,18 +137,19 @@ class AeraScheduleDays(CoordinatorEntity[AeraCoordinator], SelectEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and self._slot_idx < len(
-            self.coordinator.data[self._dsn].schedules
-        )
+        return super().available and self._slot is not None
 
     @property
     def current_option(self) -> str | None:
-        return _days_to_option(self._slot.days_of_week)
+        slot = self._slot
+        if not slot:
+            return None
+        return _days_to_option(slot.days_of_week)
 
     async def async_select_option(self, option: str) -> None:
         days = _option_to_days(option)
         await self.coordinator.api.update_schedule(
-            self._slot.schedule_key, {"days_of_week": days}
+            self._dsn, self._schedule_key, {"days_of_week": days}
         )
         self.coordinator.force_schedule_refresh()
         await self.coordinator.async_request_refresh()

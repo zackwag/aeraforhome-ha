@@ -52,9 +52,8 @@ class AeraScheduleSwitch(CoordinatorEntity[AeraCoordinator], SwitchEntity):
     def __init__(self, coordinator: AeraCoordinator, dsn: str, slot_idx: int) -> None:
         super().__init__(coordinator)
         self._dsn = dsn
-        self._slot_idx = slot_idx
-        slot = self._slot
-        self._attr_unique_id = f"{dsn}_schedule_{slot.schedule_key}"
+        self._schedule_key = coordinator.data[dsn].schedules[slot_idx].schedule_key
+        self._attr_unique_id = f"{dsn}_schedule_{self._schedule_key}"
         self._attr_name = f"Schedule {slot_idx + 1}"
 
     @property
@@ -62,8 +61,11 @@ class AeraScheduleSwitch(CoordinatorEntity[AeraCoordinator], SwitchEntity):
         return self.coordinator.data[self._dsn].device
 
     @property
-    def _slot(self) -> AeraScheduleSlot:
-        return self.coordinator.data[self._dsn].schedules[self._slot_idx]
+    def _slot(self) -> AeraScheduleSlot | None:
+        for slot in self.coordinator.data[self._dsn].schedules:
+            if slot.schedule_key == self._schedule_key:
+                return slot
+        return None
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -79,24 +81,23 @@ class AeraScheduleSwitch(CoordinatorEntity[AeraCoordinator], SwitchEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and self._slot_idx < len(
-            self.coordinator.data[self._dsn].schedules
-        )
+        return super().available and self._slot is not None
 
     @property
     def is_on(self) -> bool:
-        return self._slot.active
+        slot = self._slot
+        return slot.active if slot else False
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self.coordinator.api.update_schedule(
-            self._slot.schedule_key, {"active": True}
+            self._dsn, self._schedule_key, {"active": True}
         )
         self.coordinator.force_schedule_refresh()
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self.coordinator.api.update_schedule(
-            self._slot.schedule_key, {"active": False}
+            self._dsn, self._schedule_key, {"active": False}
         )
         self.coordinator.force_schedule_refresh()
         await self.coordinator.async_request_refresh()

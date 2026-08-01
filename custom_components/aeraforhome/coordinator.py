@@ -138,7 +138,7 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
                     break
 
     async def _fetch_schedules(self, device: AeraDevice) -> list[AeraScheduleSlot]:
-        """Fetch active schedules and their actions for a device."""
+        """Fetch configured schedules and their actions for a device."""
         slots: list[AeraScheduleSlot] = []
         try:
             raw_schedules = await self.api.get_schedules(device)
@@ -146,25 +146,33 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
             _LOGGER.debug("Failed to fetch schedules for %s", device.dsn)
             return slots
 
-        active_schedules = [s for s in raw_schedules if s.get("active")]
-        for sched in active_schedules:
+        for sched in raw_schedules:
+            actions = []
+            try:
+                actions = await self.api.get_schedule_actions(sched["key"])
+            except AeraApiError:
+                pass
+
+            is_active = sched.get("active", False)
+            has_actions = any(
+                a.get("name") == "set_intensity_sched" for a in actions
+            )
+            if not is_active and not has_actions:
+                continue
+
             slot = AeraScheduleSlot(
                 schedule_key=sched["key"],
                 slot_name=sched.get("display_name") or sched.get("name", ""),
-                active=True,
+                active=is_active,
                 start_time=sched.get("start_time_each_day", "00:00:00"),
                 end_time=sched.get("end_time_each_day", "00:00:00"),
                 days_of_week=sched.get("days_of_week", []),
             )
-            try:
-                actions = await self.api.get_schedule_actions(slot.schedule_key)
-                for action in actions:
-                    if action.get("name") == "set_intensity_sched" and action.get("active"):
-                        slot.intensity = int(action.get("value", 5))
-                        slot.action_key = action.get("key")
-                        break
-            except AeraApiError:
-                _LOGGER.debug("Failed to fetch actions for schedule %s", slot.schedule_key)
+            for action in actions:
+                if action.get("name") == "set_intensity_sched" and action.get("active"):
+                    slot.intensity = int(action.get("value", 5))
+                    slot.action_key = action.get("key")
+                    break
             slots.append(slot)
         return slots
 
@@ -186,7 +194,7 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
         slot = inactive[0]
         schedule_key = slot["key"]
 
-        await self.api.update_schedule(schedule_key, {
+        await self.api.update_schedule(dsn, schedule_key, {
             "active": True,
             "start_time_each_day": start_time,
             "end_time_each_day": end_time,
@@ -206,6 +214,6 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
 
     async def async_delete_schedule(self, dsn: str, schedule_key: int) -> None:
         """Delete a schedule by deactivating it."""
-        await self.api.update_schedule(schedule_key, {"active": False})
+        await self.api.update_schedule(dsn, schedule_key, {"active": False})
         self.force_schedule_refresh()
         await self.async_request_refresh()

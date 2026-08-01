@@ -62,15 +62,18 @@ class AeraScheduleBaseTime(CoordinatorEntity[AeraCoordinator], TimeEntity):
     def __init__(self, coordinator: AeraCoordinator, dsn: str, slot_idx: int) -> None:
         super().__init__(coordinator)
         self._dsn = dsn
-        self._slot_idx = slot_idx
+        self._schedule_key = coordinator.data[dsn].schedules[slot_idx].schedule_key
 
     @property
     def _device(self) -> AeraDevice:
         return self.coordinator.data[self._dsn].device
 
     @property
-    def _slot(self) -> AeraScheduleSlot:
-        return self.coordinator.data[self._dsn].schedules[self._slot_idx]
+    def _slot(self) -> AeraScheduleSlot | None:
+        for slot in self.coordinator.data[self._dsn].schedules:
+            if slot.schedule_key == self._schedule_key:
+                return slot
+        return None
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -86,9 +89,7 @@ class AeraScheduleBaseTime(CoordinatorEntity[AeraCoordinator], TimeEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and self._slot_idx < len(
-            self.coordinator.data[self._dsn].schedules
-        )
+        return super().available and self._slot is not None
 
 
 class AeraScheduleStartTime(AeraScheduleBaseTime):
@@ -96,18 +97,20 @@ class AeraScheduleStartTime(AeraScheduleBaseTime):
 
     def __init__(self, coordinator: AeraCoordinator, dsn: str, slot_idx: int) -> None:
         super().__init__(coordinator, dsn, slot_idx)
-        slot = self._slot
-        self._attr_unique_id = f"{dsn}_schedule_{slot.schedule_key}_start"
+        self._attr_unique_id = f"{dsn}_schedule_{self._schedule_key}_start"
         self._attr_name = f"Schedule {slot_idx + 1} start time"
 
     @property
     def native_value(self) -> dt_time | None:
-        return _parse_time(self._slot.start_time)
+        slot = self._slot
+        if not slot:
+            return None
+        return _parse_time(slot.start_time)
 
     async def async_set_value(self, value: dt_time) -> None:
         time_str = value.strftime("%H:%M:%S")
         await self.coordinator.api.update_schedule(
-            self._slot.schedule_key, {"start_time_each_day": time_str}
+            self._dsn, self._schedule_key, {"start_time_each_day": time_str}
         )
         self.coordinator.force_schedule_refresh()
         await self.coordinator.async_request_refresh()
@@ -118,18 +121,20 @@ class AeraScheduleEndTime(AeraScheduleBaseTime):
 
     def __init__(self, coordinator: AeraCoordinator, dsn: str, slot_idx: int) -> None:
         super().__init__(coordinator, dsn, slot_idx)
-        slot = self._slot
-        self._attr_unique_id = f"{dsn}_schedule_{slot.schedule_key}_end"
+        self._attr_unique_id = f"{dsn}_schedule_{self._schedule_key}_end"
         self._attr_name = f"Schedule {slot_idx + 1} end time"
 
     @property
     def native_value(self) -> dt_time | None:
-        return _parse_time(self._slot.end_time)
+        slot = self._slot
+        if not slot:
+            return None
+        return _parse_time(slot.end_time)
 
     async def async_set_value(self, value: dt_time) -> None:
         time_str = value.strftime("%H:%M:%S")
         await self.coordinator.api.update_schedule(
-            self._slot.schedule_key, {"end_time_each_day": time_str}
+            self._dsn, self._schedule_key, {"end_time_each_day": time_str}
         )
         self.coordinator.force_schedule_refresh()
         await self.coordinator.async_request_refresh()
