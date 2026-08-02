@@ -7,6 +7,6 @@
   "documentation": "https://github.com/zackwag/aeraforhome-ha",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/zackwag/aeraforhome-ha/issues",
-  "requirements": ["aeraforhome==0.2.3", "qrcode[pil]>=7.0"],
-  "version": "1.0.4"
+  "requirements": ["aeraforhome==0.2.4", "qrcode[pil]>=7.0"],
+  "version": "1.0.5"
 }
