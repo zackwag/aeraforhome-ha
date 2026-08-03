@@ -207,4 +207,3 @@ class AeraSessionSelect(CoordinatorEntity[AeraCoordinator], SelectEntity):
             await self.coordinator.api.start_session(self._dsn, duration)
             self._device.update_properties({"power_state": 1, "session_state": 1, "session_time_left": duration})
         self.async_write_ha_state()
-        await self.coordinator.async_request_refresh()

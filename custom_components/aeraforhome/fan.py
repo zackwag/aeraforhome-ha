@@ -97,18 +97,15 @@ class AeraFanEntity(CoordinatorEntity[AeraCoordinator], FanEntity):
             await self._async_set_percentage(percentage)
         self._device.update_properties({"power_state": 1})
         self.async_write_ha_state()
-        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self.coordinator.api.set_power(self._dsn, False)
         self._device.update_properties({"power_state": 0, "session_state": 0, "session_time_left": 0})
         self.async_write_ha_state()
-        await self.coordinator.async_request_refresh()
 
     async def async_set_percentage(self, percentage: int) -> None:
         await self._async_set_percentage(percentage)
         self.async_write_ha_state()
-        await self.coordinator.async_request_refresh()
 
     async def _async_set_percentage(self, percentage: int) -> None:
         if percentage == 0:
