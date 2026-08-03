@@ -51,7 +51,8 @@ Each Aera device creates:
 | Problem | `binary_sensor` | On when device reports an error condition |
 | Fragrance | `sensor` | Current fragrance name |
 | Fragrance remaining | `sensor` | Percentage remaining (0-100%) |
-| Session time remaining | `sensor` | Minutes left in active session (Aera 3/3.1/Mini) |
+| Intensity | `sensor` | Current intensity level (1-10 or 1-5 for Mini) |
+| Session time remaining | `sensor` | Time left in active session; unit configurable (Aera 3/3.1/Mini) |
 | Session | `select` | Start/stop timed sessions: Off, 2, 4, or 8 hours (Aera 3/3.1/Mini) |
 | Fragrance code | `sensor` | 3-letter fragrance code for manual entry (Mini only) |
 | Fragrance QR code | `image` | Generated QR code image for the fragrance (Mini only) |
@@ -88,6 +89,128 @@ Delete (deactivate) a schedule.
 | Field | Required | Description |
 |-------|----------|-------------|
 | `entity_id` | Yes | The schedule switch entity to delete |
+
+## Automation Examples
+
+### Notify when fragrance is running low
+
+```yaml
+automation:
+  - alias: "Aera fragrance low"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.living_room_aera_fragrance_remaining
+        below: 20
+    condition:
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: sensor.living_room_aera_fragrance_remaining
+            state: "unknown"
+    action:
+      - action: notify.mobile_app
+        data:
+          title: "Aera Low Fragrance"
+          message: "{{ state_attr('sensor.living_room_aera_fragrance_remaining', 'friendly_name') }} is at {{ states('sensor.living_room_aera_fragrance_remaining') }}%"
+```
+
+### Recreate a schedule in Home Assistant
+
+You can replicate Aera app schedules using HA automations for more flexibility (presence-based, conditional, etc.). This example runs the diffuser from 8 PM to 10 PM on weekdays at intensity 9:
+
+```yaml
+automation:
+  - alias: "Aera weekday evening on"
+    trigger:
+      - platform: time
+        at: "20:00:00"
+    condition:
+      - condition: time
+        weekday:
+          - mon
+          - tue
+          - wed
+          - thu
+          - fri
+    action:
+      - action: fan.turn_on
+        target:
+          entity_id: fan.living_room_aera
+        data:
+          percentage: 90
+  
+  - alias: "Aera weekday evening off"
+    trigger:
+      - platform: time
+        at: "22:00:00"
+    condition:
+      - condition: time
+        weekday:
+          - mon
+          - tue
+          - wed
+          - thu
+          - fri
+    action:
+      - action: fan.turn_off
+        target:
+          entity_id: fan.living_room_aera
+```
+
+### Run a session when you get home
+
+Use presence detection to start a fragrance session only when someone is home:
+
+```yaml
+automation:
+  - alias: "Aera welcome home"
+    trigger:
+      - platform: state
+        entity_id: person.you
+        to: "home"
+    condition:
+      - condition: state
+        entity_id: fan.living_room_aera
+        state: "off"
+    action:
+      - action: select.select_option
+        target:
+          entity_id: select.living_room_aera_session
+        data:
+          option: "2 hours"
+```
+
+### Turn off all diffusers at bedtime
+
+```yaml
+automation:
+  - alias: "Aera bedtime off"
+    trigger:
+      - platform: time
+        at: "22:30:00"
+    action:
+      - action: fan.turn_off
+        target:
+          entity_id:
+            - fan.living_room_aera
+            - fan.bedroom_aera
+```
+
+### Notify when cartridge is removed
+
+```yaml
+automation:
+  - alias: "Aera cartridge removed"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.living_room_aera_cartridge
+        to: "off"
+    action:
+      - action: notify.mobile_app
+        data:
+          title: "Aera Cartridge Removed"
+          message: "The fragrance cartridge was removed from {{ trigger.to_state.attributes.friendly_name }}"
+```
 
 ## Diagnostics
 
