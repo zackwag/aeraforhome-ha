@@ -6,7 +6,7 @@ from typing import Any
 
 from aera import AeraDevice
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -33,6 +33,7 @@ async def async_setup_entry(
         for dsn in new_dsns:
             entities.append(AeraFragranceNameSensor(coordinator, dsn))
             entities.append(AeraFragranceRemainingSensor(coordinator, dsn))
+            entities.append(AeraIntensitySensor(coordinator, dsn))
             device = coordinator.data[dsn].device
             if device.has_session_feature:
                 entities.append(AeraSessionTimeSensor(coordinator, dsn))
@@ -109,6 +110,7 @@ class AeraSessionTimeSensor(AeraBaseSensor):
     """Sensor for session time remaining."""
 
     _attr_name = "Session time remaining"
+    _attr_device_class = SensorDeviceClass.DURATION
     _attr_native_unit_of_measurement = "min"
     _attr_icon = "mdi:timer-sand"
 
@@ -121,6 +123,25 @@ class AeraSessionTimeSensor(AeraBaseSensor):
         if not self._device.session_active:
             return None
         return self._device.session_time_remaining
+
+
+class AeraIntensitySensor(AeraBaseSensor):
+    """Sensor for the current fragrance intensity level."""
+
+    _attr_name = "Intensity"
+    _attr_icon = "mdi:scent"
+
+    def __init__(self, coordinator: AeraCoordinator, dsn: str) -> None:
+        super().__init__(coordinator, dsn)
+        self._attr_unique_id = f"{dsn}_intensity"
+
+    @property
+    def native_value(self) -> int | None:
+        return self._device.intensity
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        return {"max_intensity": self._device.max_intensity}
 
 
 class AeraFragranceCodeSensor(AeraBaseSensor):
