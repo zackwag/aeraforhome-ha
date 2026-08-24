@@ -109,11 +109,9 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
                 for data in result.values()
                 for slot in data.schedules
             }
+            if should_fetch_schedules:
+                self._cleanup_orphaned_schedule_entities(current_schedule_keys)
             if self._known_schedule_keys and current_schedule_keys != self._known_schedule_keys:
-                _LOGGER.debug("Schedule change detected")
-                removed_keys = self._known_schedule_keys - current_schedule_keys
-                if removed_keys:
-                    self._remove_schedule_entities(removed_keys)
                 for cb in self.schedule_change_callbacks:
                     cb()
             self._known_schedule_keys = current_schedule_keys
@@ -124,18 +122,18 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
         except AeraApiError as err:
             raise UpdateFailed(f"Error communicating with Aera API: {err}") from err
 
-    def _remove_schedule_entities(self, removed_keys: set[int]) -> None:
-        """Remove entities for schedules that no longer exist."""
+    def _cleanup_orphaned_schedule_entities(self, current_keys: set[int]) -> None:
+        """Remove schedule entities that have no matching schedule."""
         if not self.config_entry_id:
             return
         ent_reg = er.async_get(self.hass)
         entries = er.async_entries_for_config_entry(ent_reg, self.config_entry_id)
         for entry in entries:
-            for key in removed_keys:
-                if f"_schedule_{key}" in entry.unique_id:
-                    _LOGGER.debug("Removing entity %s for deleted schedule %s", entry.entity_id, key)
-                    ent_reg.async_remove(entry.entity_id)
-                    break
+            if "_schedule_" not in entry.unique_id:
+                continue
+            if not any(f"_schedule_{key}" in entry.unique_id for key in current_keys):
+                _LOGGER.debug("Removing orphaned schedule entity %s", entry.entity_id)
+                ent_reg.async_remove(entry.entity_id)
 
     async def _fetch_schedules(self, device: AeraDevice) -> list[AeraScheduleSlot]:
         """Fetch configured schedules and their actions for a device."""
