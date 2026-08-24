@@ -145,24 +145,19 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
             return slots
 
         for sched in raw_schedules:
+            if not sched.get("active", False):
+                continue
+
             actions = []
             try:
                 actions = await self.api.get_schedule_actions(sched["key"])
             except AeraApiError:
                 pass
 
-            is_active = sched.get("active", False)
-            has_actions = any(
-                a.get("name") == "set_intensity_sched" and a.get("active", False)
-                for a in actions
-            )
-            if not is_active and not has_actions:
-                continue
-
             slot = AeraScheduleSlot(
                 schedule_key=sched["key"],
                 slot_name=sched.get("display_name") or sched.get("name", ""),
-                active=is_active,
+                active=True,
                 start_time=sched.get("start_time_each_day", "00:00:00"),
                 end_time=sched.get("end_time_each_day", "00:00:00"),
                 days_of_week=sched.get("days_of_week", []),

@@ -63,11 +63,11 @@ Each active schedule slot adds:
 
 | Entity | Type | Description |
 |--------|------|-------------|
-| Schedule N | `switch` | Enable/disable the schedule |
 | Schedule N start time | `time` | When the schedule starts |
 | Schedule N end time | `time` | When the schedule ends |
 | Schedule N days | `select` | Every day, Weekdays, or Weekends |
 | Schedule N intensity | `number` | Fragrance intensity level (slider) |
+| Schedule N delete | `button` | Delete the schedule |
 
 ## Services
 

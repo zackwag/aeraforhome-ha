@@ -19,12 +19,12 @@ from .coordinator import AeraCoordinator
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
+    Platform.BUTTON,
     Platform.FAN,
     Platform.IMAGE,
     Platform.NUMBER,
     Platform.SELECT,
     Platform.SENSOR,
-    Platform.SWITCH,
     Platform.TIME,
 ]
 
@@ -104,7 +104,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if len(parts) != 2:
             return
         dsn = parts[0]
-        schedule_key = int(parts[1])
+        key_part = parts[1].split("_")[0]
+        schedule_key = int(key_part)
         coord = _get_coordinator(hass, dsn)
         if not coord:
             return
