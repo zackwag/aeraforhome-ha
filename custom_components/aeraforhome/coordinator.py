@@ -155,7 +155,8 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
 
             is_active = sched.get("active", False)
             has_actions = any(
-                a.get("name") == "set_intensity_sched" for a in actions
+                a.get("name") == "set_intensity_sched" and a.get("active", False)
+                for a in actions
             )
             if not is_active and not has_actions:
                 continue
