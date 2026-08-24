@@ -15,14 +15,13 @@ blueprint:
           integration: aeraforhome
     intensity:
       name: Intensity
-      description: Fragrance intensity level (percentage).
-      default: 50
+      description: Fragrance intensity level (1–10 for full-size, 1–5 for Mini).
+      default: 5
       selector:
         number:
-          min: 10
-          max: 100
-          step: 10
-          unit_of_measurement: "%"
+          min: 1
+          max: 10
+          step: 1
     start_time:
       name: Start time
       description: When to turn on the diffuser.
@@ -75,6 +74,10 @@ condition:
   - condition: time
     weekday: !input days
 
+variables:
+  intensity: !input intensity
+  fan_entity: !input fan_entity
+
 action:
   - choose:
       - conditions:
@@ -85,7 +88,7 @@ action:
             target:
               entity_id: !input fan_entity
             data:
-              percentage: !input intensity
+              percentage: "{{ (intensity | int) * state_attr(fan_entity, 'percentage_step') | int }}"
       - conditions:
           - condition: trigger
             id: stop
