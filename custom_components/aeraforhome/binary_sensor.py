@@ -40,6 +40,8 @@ async def async_setup_entry(
             entities.append(AeraDeviceProblemSensor(coordinator, dsn))
             if device.device_type.is_full_size:
                 entities.append(AeraCartridgePresentSensor(coordinator, dsn))
+            if device.has_session_feature:
+                entities.append(AeraSessionActiveSensor(coordinator, dsn))
         async_add_entities(entities)
 
     _add_entities()
@@ -159,3 +161,40 @@ class AeraDeviceProblemSensor(CoordinatorEntity[AeraCoordinator], BinarySensorEn
         if self._device.has_error:
             return {"error_code": self._device.error_condition}
         return None
+
+
+class AeraSessionActiveSensor(CoordinatorEntity[AeraCoordinator], BinarySensorEntity):
+    """Binary sensor for whether a session is currently running."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Session active"
+    _attr_device_class = BinarySensorDeviceClass.RUNNING
+
+    def __init__(self, coordinator: AeraCoordinator, dsn: str) -> None:
+        super().__init__(coordinator)
+        self._dsn = dsn
+        self._attr_unique_id = f"{dsn}_session_active"
+
+    @property
+    def _device(self) -> AeraDevice:
+        return self.coordinator.data[self._dsn].device
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        device = self._device
+        return {
+            "identifiers": {(DOMAIN, self._dsn)},
+            "name": device.device_name,
+            "manufacturer": "Aera",
+            "model": device.device_type.name.replace("_", " ").title(),
+            "sw_version": device.firmware_version,
+            "suggested_area": device.room_name,
+        }
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._device.is_online
+
+    @property
+    def is_on(self) -> bool | None:
+        return self._device.session_active

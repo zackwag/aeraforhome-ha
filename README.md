@@ -54,6 +54,7 @@ Each Aera device creates:
 | Intensity | `sensor` | Current intensity level (1-10 or 1-5 for Mini) |
 | Session time remaining | `sensor` | Time left in active session; unit configurable (Aera 3/3.1/Mini) |
 | Session | `select` | Start/stop timed sessions: Off, 2, 4, or 8 hours (Aera 3/3.1/Mini) |
+| Session active | `binary_sensor` | Whether a timed session is currently running (Aera 3/3.1/Mini) |
 | Fragrance code | `sensor` | 3-letter fragrance code for manual entry (Mini only) |
 | Fragrance QR code | `image` | Generated QR code image for the fragrance (Mini only) |
 | Cartridge | `binary_sensor` | Plugged in/Unplugged (full-size only) |
