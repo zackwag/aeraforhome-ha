@@ -1,0 +1,95 @@
+blueprint:
+  name: Aera Fragrance Schedule
+  description: >
+    Run an Aera diffuser on a schedule, similar to the built-in Aera app schedules
+    but with all the flexibility of Home Assistant automations (presence conditions,
+    notifications, etc.).
+  domain: automation
+  input:
+    fan_entity:
+      name: Diffuser
+      description: The Aera fan entity to control.
+      selector:
+        entity:
+          domain: fan
+          integration: aeraforhome
+    intensity:
+      name: Intensity
+      description: Fragrance intensity level (percentage).
+      default: 50
+      selector:
+        number:
+          min: 10
+          max: 100
+          step: 10
+          unit_of_measurement: "%"
+    start_time:
+      name: Start time
+      description: When to turn on the diffuser.
+      selector:
+        time:
+    end_time:
+      name: End time
+      description: When to turn off the diffuser.
+      selector:
+        time:
+    days:
+      name: Days of the week
+      description: Which days to run the schedule.
+      default:
+        - mon
+        - tue
+        - wed
+        - thu
+        - fri
+        - sat
+        - sun
+      selector:
+        select:
+          multiple: true
+          options:
+            - label: Monday
+              value: mon
+            - label: Tuesday
+              value: tue
+            - label: Wednesday
+              value: wed
+            - label: Thursday
+              value: thu
+            - label: Friday
+              value: fri
+            - label: Saturday
+              value: sat
+            - label: Sunday
+              value: sun
+
+trigger:
+  - platform: time
+    at: !input start_time
+    id: start
+  - platform: time
+    at: !input end_time
+    id: stop
+
+condition:
+  - condition: time
+    weekday: !input days
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: start
+        sequence:
+          - action: fan.turn_on
+            target:
+              entity_id: !input fan_entity
+            data:
+              percentage: !input intensity
+      - conditions:
+          - condition: trigger
+            id: stop
+        sequence:
+          - action: fan.turn_off
+            target:
+              entity_id: !input fan_entity

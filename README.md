@@ -91,6 +91,20 @@ Delete (deactivate) a schedule.
 |-------|----------|-------------|
 | `entity_id` | Yes | The schedule switch entity to delete |
 
+## Blueprints
+
+### Aera Fragrance Schedule
+
+A ready-made blueprint that replicates Aera app schedules in Home Assistant. Pick your diffuser, intensity, start/end time, and days — it creates a complete automation.
+
+[![Import Blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fzackwag%2Faeraforhome-ha%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Faera_schedule.yaml)
+
+Or manually: **Settings > Automations & Scenes > Blueprints > Import Blueprint** and paste:
+
+```
+https://github.com/zackwag/aeraforhome-ha/blob/main/blueprints/automation/aera_schedule.yaml
+```
+
 ## Automation Examples
 
 ### Notify when fragrance is running low
