@@ -13,7 +13,7 @@ from aera.api import AeraAuthError, AeraApiError
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, SCAN_INTERVAL_SECONDS, SCHEDULE_POLL_INTERVAL_SECONDS
@@ -97,12 +97,18 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
             if should_fetch_schedules:
                 self._last_schedule_fetch = now
 
-            new_dsns = set(result.keys()) - self.known_dsns
+            current_dsns = set(result.keys())
+            new_dsns = current_dsns - self.known_dsns
             if self.known_dsns and new_dsns:
                 _LOGGER.debug("New Aera devices discovered: %s", new_dsns)
                 for cb in self.new_device_callbacks:
                     cb(new_dsns)
-            self.known_dsns = set(result.keys())
+
+            removed_dsns = self.known_dsns - current_dsns
+            if self.known_dsns and removed_dsns:
+                self._remove_stale_devices(removed_dsns)
+
+            self.known_dsns = current_dsns
 
             current_schedule_keys = {
                 slot.schedule_key
@@ -134,6 +140,17 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
             if not any(f"_schedule_{key}" in entry.unique_id for key in current_keys):
                 _LOGGER.debug("Removing orphaned schedule entity %s", entry.entity_id)
                 ent_reg.async_remove(entry.entity_id)
+
+    def _remove_stale_devices(self, removed_dsns: set[str]) -> None:
+        """Remove devices that are no longer returned by the API."""
+        if not self.config_entry_id:
+            return
+        dev_reg = dr.async_get(self.hass)
+        for dsn in removed_dsns:
+            device_entry = dev_reg.async_get_device(identifiers={(DOMAIN, dsn)})
+            if device_entry:
+                _LOGGER.debug("Removing device no longer in Aera account: %s", dsn)
+                dev_reg.async_remove_device(device_entry.id)
 
     async def _fetch_schedules(self, device: AeraDevice) -> list[AeraScheduleSlot]:
         """Fetch configured schedules and their actions for a device."""

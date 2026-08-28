@@ -69,6 +69,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     coordinator = AeraCoordinator(hass, api)
     coordinator.config_entry_id = entry.entry_id
+
+    dev_reg = dr.async_get(hass)
+    for device_entry in dr.async_entries_for_config_entry(dev_reg, entry.entry_id):
+        for identifier in device_entry.identifiers:
+            if identifier[0] == DOMAIN:
+                coordinator.known_dsns.add(identifier[1])
+
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})
