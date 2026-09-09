@@ -1,5 +1,5 @@
-pytest>=7.0
-pytest-asyncio>=0.21
+pytest>=9.1.1
+pytest-asyncio>=1.4.0
 pytest-homeassistant-custom-component>=0.13.364
 aeraforhome>=0.2.4
-qrcode[pil]>=7.0
+qrcode[pil]>=8.2
