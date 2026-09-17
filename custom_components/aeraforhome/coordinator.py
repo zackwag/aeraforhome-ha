@@ -6,14 +6,13 @@ import logging
 import time
 from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Any
 
 from aera import AeraApi, AeraDevice
-from aera.api import AeraAuthError, AeraApiError
-
+from aera.api import AeraApiError, AeraAuthError
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, SCAN_INTERVAL_SECONDS, SCHEDULE_POLL_INTERVAL_SECONDS
@@ -111,9 +110,7 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
             self.known_dsns = current_dsns
 
             current_schedule_keys = {
-                slot.schedule_key
-                for data in result.values()
-                for slot in data.schedules
+                slot.schedule_key for data in result.values() for slot in data.schedules
             }
             if should_fetch_schedules:
                 self._cleanup_orphaned_schedule_entities(current_schedule_keys)
@@ -205,21 +202,28 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
         slot = inactive[0]
         schedule_key = slot["key"]
 
-        await self.api.update_schedule(dsn, schedule_key, {
-            "active": True,
-            "start_time_each_day": start_time,
-            "end_time_each_day": end_time,
-            "days_of_week": days_of_week,
-        })
-        await self.api.create_schedule_action(schedule_key, {
-            "name": "set_intensity_sched",
-            "value": str(intensity),
-            "base_type": "integer",
-            "active": True,
-            "at_start": True,
-            "at_end": False,
-            "in_range": False,
-        })
+        await self.api.update_schedule(
+            dsn,
+            schedule_key,
+            {
+                "active": True,
+                "start_time_each_day": start_time,
+                "end_time_each_day": end_time,
+                "days_of_week": days_of_week,
+            },
+        )
+        await self.api.create_schedule_action(
+            schedule_key,
+            {
+                "name": "set_intensity_sched",
+                "value": str(intensity),
+                "base_type": "integer",
+                "active": True,
+                "at_start": True,
+                "at_end": False,
+                "in_range": False,
+            },
+        )
         self.force_schedule_refresh()
         await self.async_request_refresh()
 

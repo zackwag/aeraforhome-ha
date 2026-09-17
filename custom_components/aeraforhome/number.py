@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 from aera import AeraDevice
-
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
@@ -101,9 +100,7 @@ class AeraScheduleIntensity(CoordinatorEntity[AeraCoordinator], NumberEntity):
             return
         int_value = int(value)
         if slot.action_key:
-            await self.coordinator.api.update_schedule_action(
-                slot.action_key, {"value": int_value}
-            )
+            await self.coordinator.api.update_schedule_action(slot.action_key, {"value": int_value})
         else:
             await self.coordinator.api.create_schedule_action(
                 self._schedule_key,

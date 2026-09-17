@@ -2,20 +2,15 @@
 
 from __future__ import annotations
 
-import pytest
-
 from custom_components.aeraforhome.binary_sensor import (
-    AeraConnectivitySensor,
     AeraCartridgePresentSensor,
+    AeraConnectivitySensor,
     AeraDeviceProblemSensor,
     AeraSessionActiveSensor,
 )
 
-from .conftest import DEVICE_DATA, make_device_data
-
 
 class TestConnectivitySensor:
-
     def test_unique_id(self, mock_coordinator):
         sensor = AeraConnectivitySensor(mock_coordinator, "AC000W123456789")
         assert sensor._attr_unique_id == "AC000W123456789_connectivity"
@@ -31,7 +26,6 @@ class TestConnectivitySensor:
 
 
 class TestCartridgePresentSensor:
-
     def test_unique_id(self, mock_coordinator):
         sensor = AeraCartridgePresentSensor(mock_coordinator, "AC000W123456789")
         assert sensor._attr_unique_id == "AC000W123456789_cartridge_present"
@@ -47,7 +41,6 @@ class TestCartridgePresentSensor:
 
 
 class TestDeviceProblemSensor:
-
     def test_unique_id(self, mock_coordinator):
         sensor = AeraDeviceProblemSensor(mock_coordinator, "AC000W123456789")
         assert sensor._attr_unique_id == "AC000W123456789_problem"
@@ -65,7 +58,6 @@ class TestDeviceProblemSensor:
 
 
 class TestSessionActiveSensor:
-
     def test_unique_id(self, mock_coordinator):
         sensor = AeraSessionActiveSensor(mock_coordinator, "AC000W123456789")
         assert sensor._attr_unique_id == "AC000W123456789_session_active"

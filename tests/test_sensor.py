@@ -2,21 +2,18 @@
 
 from __future__ import annotations
 
-import pytest
-
 from custom_components.aeraforhome.sensor import (
+    AeraFragranceCodeSensor,
     AeraFragranceNameSensor,
     AeraFragranceRemainingSensor,
     AeraIntensitySensor,
     AeraSessionTimeSensor,
-    AeraFragranceCodeSensor,
 )
 
 from .conftest import MINI_DEVICE_DATA, make_device_data
 
 
 class TestFragranceNameSensor:
-
     def test_unique_id(self, mock_coordinator):
         sensor = AeraFragranceNameSensor(mock_coordinator, "AC000W123456789")
         assert sensor._attr_unique_id == "AC000W123456789_fragrance_name"
@@ -27,7 +24,6 @@ class TestFragranceNameSensor:
 
 
 class TestFragranceRemainingSensor:
-
     def test_unique_id(self, mock_coordinator):
         sensor = AeraFragranceRemainingSensor(mock_coordinator, "AC000W123456789")
         assert sensor._attr_unique_id == "AC000W123456789_fragrance_remaining"
@@ -42,7 +38,6 @@ class TestFragranceRemainingSensor:
 
 
 class TestIntensitySensor:
-
     def test_unique_id(self, mock_coordinator):
         sensor = AeraIntensitySensor(mock_coordinator, "AC000W123456789")
         assert sensor._attr_unique_id == "AC000W123456789_intensity"
@@ -58,7 +53,6 @@ class TestIntensitySensor:
 
 
 class TestSessionTimeSensor:
-
     def test_unique_id(self, mock_coordinator):
         sensor = AeraSessionTimeSensor(mock_coordinator, "AC000W123456789")
         assert sensor._attr_unique_id == "AC000W123456789_session_time_remaining"
@@ -75,7 +69,6 @@ class TestSessionTimeSensor:
 
 
 class TestFragranceCodeSensor:
-
     def test_native_value_with_info(self, mock_coordinator):
         mock_coordinator.data["AC000W999888777"] = make_device_data(
             data=MINI_DEVICE_DATA, schedules=[]

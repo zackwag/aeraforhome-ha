@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 from aera import AeraDevice
-
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback

@@ -2,33 +2,36 @@
 
 from __future__ import annotations
 
-import sys
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 # Patch ConfigFlowResult if not present in this HA version
 from homeassistant import config_entries as _ce
+
 if not hasattr(_ce, "ConfigFlowResult"):
     from homeassistant.data_entry_flow import FlowResult
+
     _ce.ConfigFlowResult = FlowResult
 
 # Patch FanEntityFeature.TURN_ON/TURN_OFF if not present in this HA version
 from homeassistant.components.fan import FanEntityFeature as _FEF
+
 if not hasattr(_FEF, "TURN_ON"):
     _FEF._value2member_map_[8] = _FEF.SET_SPEED
     _FEF.TURN_ON = _FEF(8)
     _FEF.TURN_OFF = _FEF(16)
 
-from aera.device import AeraDevice, DeviceType
 from aera.contentful import FragranceInfo
-
+from aera.device import AeraDevice
 from homeassistant.core import HomeAssistant
 
-from custom_components.aeraforhome.const import DOMAIN
-from custom_components.aeraforhome.coordinator import AeraCoordinator, AeraDeviceData, AeraScheduleSlot
-
+from custom_components.aeraforhome.coordinator import (
+    AeraCoordinator,
+    AeraDeviceData,
+    AeraScheduleSlot,
+)
 
 MOCK_EMAIL = "test@example.com"
 MOCK_PASSWORD = "password123"
@@ -96,7 +99,9 @@ SAMPLE_SCHEDULE_SLOT = AeraScheduleSlot(
 )
 
 
-def make_device(data: dict[str, Any] | None = None, properties: dict[str, Any] | None = None) -> AeraDevice:
+def make_device(
+    data: dict[str, Any] | None = None, properties: dict[str, Any] | None = None
+) -> AeraDevice:
     """Create an AeraDevice with optional properties."""
     dev = AeraDevice(
         dict(data or DEVICE_DATA),

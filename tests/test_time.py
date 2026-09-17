@@ -3,20 +3,16 @@
 from __future__ import annotations
 
 from datetime import time as dt_time
-
 from unittest.mock import AsyncMock
 
-import pytest
-
 from custom_components.aeraforhome.time import (
-    _parse_time,
-    AeraScheduleStartTime,
     AeraScheduleEndTime,
+    AeraScheduleStartTime,
+    _parse_time,
 )
 
 
 class TestParseTime:
-
     def test_hms(self):
         assert _parse_time("08:30:00") == dt_time(8, 30, 0)
 
@@ -28,7 +24,6 @@ class TestParseTime:
 
 
 class TestScheduleStartTime:
-
     def test_unique_id(self, mock_coordinator):
         entity = AeraScheduleStartTime(mock_coordinator, "AC000W123456789", 0)
         assert entity._attr_unique_id == "AC000W123456789_schedule_100_start"
@@ -49,7 +44,6 @@ class TestScheduleStartTime:
 
 
 class TestScheduleEndTime:
-
     def test_unique_id(self, mock_coordinator):
         entity = AeraScheduleEndTime(mock_coordinator, "AC000W123456789", 0)
         assert entity._attr_unique_id == "AC000W123456789_schedule_100_end"

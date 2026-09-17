@@ -2,22 +2,19 @@
 
 from __future__ import annotations
 
-import pytest
-
 from custom_components.aeraforhome.select import (
-    _days_to_option,
-    _option_to_days,
-    _minutes_to_option,
     DAYS_EVERY_DAY,
     DAYS_WEEKDAYS,
     DAYS_WEEKENDS,
     SESSION_DURATIONS,
     AeraSessionSelect,
+    _days_to_option,
+    _minutes_to_option,
+    _option_to_days,
 )
 
 
 class TestDaysHelpers:
-
     def test_days_to_option_every_day(self):
         assert _days_to_option(DAYS_EVERY_DAY) == "Every day"
 
@@ -47,7 +44,6 @@ class TestDaysHelpers:
 
 
 class TestMinutesToOption:
-
     def test_zero(self):
         assert _minutes_to_option(0) == "Off"
 
@@ -77,7 +73,6 @@ class TestMinutesToOption:
 
 
 class TestSessionSelect:
-
     def test_current_option_off(self, mock_coordinator):
         select = AeraSessionSelect(mock_coordinator, "AC000W123456789")
         assert select.current_option == "Off"
@@ -104,7 +99,6 @@ class TestSessionSelect:
 
 
 class TestSessionDurations:
-
     def test_all_durations_present(self):
         assert SESSION_DURATIONS["Off"] == 0
         assert SESSION_DURATIONS["2 hours"] == 120
