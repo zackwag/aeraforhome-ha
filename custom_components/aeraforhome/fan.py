@@ -6,7 +6,6 @@ import math
 from typing import Any
 
 from aera import AeraDevice
-
 from homeassistant.components.fan import FanEntity, FanEntityFeature
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -30,9 +29,7 @@ async def async_setup_entry(
         if not new_dsns:
             return
         tracked.update(new_dsns)
-        async_add_entities(
-            AeraFanEntity(coordinator, dsn) for dsn in new_dsns
-        )
+        async_add_entities(AeraFanEntity(coordinator, dsn) for dsn in new_dsns)
 
     _add_entities()
     coordinator.register_new_device_callback(_add_entities)
@@ -43,7 +40,9 @@ class AeraFanEntity(CoordinatorEntity[AeraCoordinator], FanEntity):
 
     _attr_has_entity_name = True
     _attr_name = None
-    _attr_supported_features = FanEntityFeature.SET_SPEED | FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF
+    _attr_supported_features = (
+        FanEntityFeature.SET_SPEED | FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF
+    )
 
     def __init__(self, coordinator: AeraCoordinator, dsn: str) -> None:
         super().__init__(coordinator)
@@ -100,7 +99,9 @@ class AeraFanEntity(CoordinatorEntity[AeraCoordinator], FanEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self.coordinator.api.set_power(self._dsn, False)
-        self._device.update_properties({"power_state": 0, "session_state": 0, "session_time_left": 0})
+        self._device.update_properties(
+            {"power_state": 0, "session_state": 0, "session_time_left": 0}
+        )
         self.async_write_ha_state()
 
     async def async_set_percentage(self, percentage: int) -> None:

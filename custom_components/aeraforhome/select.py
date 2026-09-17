@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 from aera import AeraDevice
-
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
@@ -202,8 +201,12 @@ class AeraSessionSelect(CoordinatorEntity[AeraCoordinator], SelectEntity):
         duration = SESSION_DURATIONS[option]
         if duration == 0:
             await self.coordinator.api.set_power(self._dsn, False)
-            self._device.update_properties({"power_state": 0, "session_state": 0, "session_time_left": 0})
+            self._device.update_properties(
+                {"power_state": 0, "session_state": 0, "session_time_left": 0}
+            )
         else:
             await self.coordinator.api.start_session(self._dsn, duration)
-            self._device.update_properties({"power_state": 1, "session_state": 1, "session_time_left": duration})
+            self._device.update_properties(
+                {"power_state": 1, "session_state": 1, "session_time_left": duration}
+            )
         self.async_write_ha_state()

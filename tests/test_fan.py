@@ -4,16 +4,10 @@ from __future__ import annotations
 
 import math
 
-import pytest
-
 from custom_components.aeraforhome.fan import AeraFanEntity
-from custom_components.aeraforhome.coordinator import AeraCoordinator
-
-from .conftest import DEVICE_DATA, SAMPLE_PROPERTIES, make_device
 
 
 class TestFanEntity:
-
     def test_unique_id(self, mock_coordinator):
         fan = AeraFanEntity(mock_coordinator, "AC000W123456789")
         assert fan._attr_unique_id == "AC000W123456789"

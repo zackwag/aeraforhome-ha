@@ -6,7 +6,6 @@ from datetime import time as dt_time
 from typing import Any
 
 from aera import AeraDevice
-
 from homeassistant.components.time import TimeEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory

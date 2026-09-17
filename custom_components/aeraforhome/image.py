@@ -7,9 +7,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 import qrcode
-
 from aera import AeraDevice
-
 from homeassistant.components.image import ImageEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -104,8 +102,6 @@ class AeraFragranceQrImage(CoordinatorEntity[AeraCoordinator], ImageEntity):
             return None
         if url != self._qr_url:
             self._qr_url = url
-            self._qr_bytes = await self.hass.async_add_executor_job(
-                _generate_qr_png, url
-            )
+            self._qr_bytes = await self.hass.async_add_executor_job(_generate_qr_png, url)
             self._attr_image_last_updated = datetime.now(tz=timezone.utc)
         return self._qr_bytes

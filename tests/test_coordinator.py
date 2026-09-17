@@ -2,27 +2,20 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
-
 import pytest
-
-from aera.api import AeraAuthError, AeraApiError
-
+from aera.api import AeraApiError, AeraAuthError
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from custom_components.aeraforhome.coordinator import (
     AeraCoordinator,
-    AeraDeviceData,
-    AeraScheduleSlot,
 )
 
-from .conftest import DEVICE_DATA, SAMPLE_PROPERTIES, make_device
+from .conftest import make_device
 
 
 class TestCoordinatorUpdate:
-
     async def test_successful_update(self, hass: HomeAssistant, mock_api):
         coordinator = AeraCoordinator(hass, mock_api)
         mock_api.get_schedules.return_value = []
@@ -45,10 +38,16 @@ class TestCoordinatorUpdate:
 
 
 class TestCoordinatorSchedules:
-
     async def test_fetch_schedules_active_only(self, hass, mock_api):
         mock_api.get_schedules.return_value = [
-            {"key": 1, "active": True, "display_name": "Morning", "start_time_each_day": "08:00:00", "end_time_each_day": "12:00:00", "days_of_week": [2, 3, 4, 5, 6]},
+            {
+                "key": 1,
+                "active": True,
+                "display_name": "Morning",
+                "start_time_each_day": "08:00:00",
+                "end_time_each_day": "12:00:00",
+                "days_of_week": [2, 3, 4, 5, 6],
+            },
             {"key": 2, "active": False, "display_name": "Night"},
         ]
         mock_api.get_schedule_actions.return_value = [
@@ -71,7 +70,6 @@ class TestCoordinatorSchedules:
 
 
 class TestCoordinatorForceRefresh:
-
     def test_force_schedule_refresh(self, hass, mock_api):
         coordinator = AeraCoordinator(hass, mock_api)
         coordinator._last_schedule_fetch = 99999.0
@@ -80,7 +78,6 @@ class TestCoordinatorForceRefresh:
 
 
 class TestCoordinatorCallbacks:
-
     def test_register_new_device_callback(self, hass, mock_api):
         coordinator = AeraCoordinator(hass, mock_api)
         cb = lambda dsns: None

@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import voluptuous as vol
-
 from aera import AeraApi
 from aera.api import AeraAuthError
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import CONF_EMAIL, CONF_PASSWORD, DOMAIN
@@ -31,21 +30,21 @@ PLATFORMS = [
 SERVICE_CREATE_SCHEDULE = "create_schedule"
 SERVICE_DELETE_SCHEDULE = "delete_schedule"
 
-CREATE_SCHEDULE_SCHEMA = vol.Schema({
-    vol.Required("entity_id"): str,
-    vol.Required("start_time"): str,
-    vol.Required("end_time"): str,
-    vol.Optional("days", default="every_day"): vol.In(
-        ["every_day", "weekdays", "weekends"]
-    ),
-    vol.Optional("intensity", default=5): vol.All(
-        vol.Coerce(int), vol.Range(min=1, max=10)
-    ),
-})
+CREATE_SCHEDULE_SCHEMA = vol.Schema(
+    {
+        vol.Required("entity_id"): str,
+        vol.Required("start_time"): str,
+        vol.Required("end_time"): str,
+        vol.Optional("days", default="every_day"): vol.In(["every_day", "weekdays", "weekends"]),
+        vol.Optional("intensity", default=5): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
+    }
+)
 
-DELETE_SCHEDULE_SCHEMA = vol.Schema({
-    vol.Required("entity_id"): str,
-})
+DELETE_SCHEDULE_SCHEMA = vol.Schema(
+    {
+        vol.Required("entity_id"): str,
+    }
+)
 
 DAYS_MAP = {
     "every_day": [2, 3, 4, 5, 6, 7, 1],

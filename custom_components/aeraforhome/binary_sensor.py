@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 from aera import AeraDevice
-
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
