@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.3](https://github.com/zackwag/aeraforhome-ha/compare/v1.2.2...v1.2.3) (2026-10-15)
+
+
+### Miscellaneous Chores
+
+* update pytest-homeassistant-custom-component requirement ([acf6a06](https://github.com/zackwag/aeraforhome-ha/commit/acf6a061e1c907a113f279f3aa225cde4940ad77))
+* update pytest-homeassistant-custom-component requirement from &gt;=0.13.368 to &gt;=0.13.372 ([#32](https://github.com/zackwag/aeraforhome-ha/issues/32)) ([acf6a06](https://github.com/zackwag/aeraforhome-ha/commit/acf6a061e1c907a113f279f3aa225cde4940ad77))
+
 ## [1.2.2](https://github.com/zackwag/aeraforhome-ha/compare/v1.2.1...v1.2.2) (2026-10-15)
 
 
