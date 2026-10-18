@@ -22,20 +22,20 @@ async def async_setup_entry(
 ) -> None:
     """Set up Aera schedule time entities."""
     coordinator: AeraCoordinator = hass.data[DOMAIN][entry.entry_id]
-    tracked_keys: set[str] = set()
+    tracked_keys: set[int] = set()
 
     @callback
     def _sync_entities() -> None:
+        current_keys = {
+            slot.schedule_key for data in coordinator.data.values() for slot in data.schedules
+        }
+        tracked_keys.intersection_update(current_keys)
         new_entities: list[TimeEntity] = []
         for dsn, data in coordinator.data.items():
             for idx, slot in enumerate(data.schedules):
-                start_key = f"{slot.schedule_key}_start"
-                end_key = f"{slot.schedule_key}_end"
-                if start_key not in tracked_keys:
-                    tracked_keys.add(start_key)
+                if slot.schedule_key not in tracked_keys:
+                    tracked_keys.add(slot.schedule_key)
                     new_entities.append(AeraScheduleStartTime(coordinator, dsn, idx))
-                if end_key not in tracked_keys:
-                    tracked_keys.add(end_key)
                     new_entities.append(AeraScheduleEndTime(coordinator, dsn, idx))
         if new_entities:
             async_add_entities(new_entities)
