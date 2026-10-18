@@ -55,7 +55,7 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
         self.api = api
         self.known_dsns: set[str] = set()
         self._known_schedule_keys: set[int] = set()
-        self._last_schedule_fetch: float = 0.0
+        self._last_schedule_fetch: float | None = None
         self._cached_schedules: dict[str, list[AeraScheduleSlot]] = {}
         self.new_device_callbacks: list[callback] = []
         self.schedule_change_callbacks: list[callback] = []
@@ -73,7 +73,7 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
 
     def force_schedule_refresh(self) -> None:
         """Force schedules to be re-fetched on next poll."""
-        self._last_schedule_fetch = 0.0
+        self._last_schedule_fetch = None
 
     @callback
     def async_update_listeners(self) -> None:
@@ -96,7 +96,8 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
 
             now = time.monotonic()
             should_fetch_schedules = (
-                now - self._last_schedule_fetch >= SCHEDULE_POLL_INTERVAL_SECONDS
+                self._last_schedule_fetch is None
+                or now - self._last_schedule_fetch >= SCHEDULE_POLL_INTERVAL_SECONDS
             )
 
             result: dict[str, AeraDeviceData] = {}

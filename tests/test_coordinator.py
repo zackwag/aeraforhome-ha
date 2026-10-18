@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 from aera.api import AeraApiError, AeraAuthError
 from homeassistant.core import HomeAssistant
@@ -105,7 +107,7 @@ class TestCoordinatorSchedules:
         assert [slot.schedule_key for slot in data[DSN].schedules] == [1]
         assert er.async_get(hass).async_get(entity_id) is not None
         # The failed fetch is retried on the next poll
-        assert coordinator._last_schedule_fetch == 0.0
+        assert coordinator._last_schedule_fetch is None
 
     async def test_cleanup_matches_exact_schedule_key(self, hass, mock_api):
         entry = MockConfigEntry(domain=DOMAIN)
@@ -124,11 +126,18 @@ class TestCoordinatorSchedules:
 
 
 class TestCoordinatorForceRefresh:
+    async def test_first_poll_fetches_schedules_right_after_boot(self, hass, mock_api):
+        coordinator = AeraCoordinator(hass, mock_api)
+        mock_api.get_schedules.return_value = [_raw_schedule(1)]
+        with patch("custom_components.aeraforhome.coordinator.time.monotonic", return_value=10.0):
+            data = await coordinator._async_update_data()
+        assert [slot.schedule_key for slot in data[DSN].schedules] == [1]
+
     def test_force_schedule_refresh(self, hass, mock_api):
         coordinator = AeraCoordinator(hass, mock_api)
         coordinator._last_schedule_fetch = 99999.0
         coordinator.force_schedule_refresh()
-        assert coordinator._last_schedule_fetch == 0.0
+        assert coordinator._last_schedule_fetch is None
 
 
 class TestCoordinatorCallbacks:
