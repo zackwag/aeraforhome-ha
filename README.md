@@ -7,7 +7,7 @@ Home Assistant custom integration for [Aera for Home](https://www.theaerastore.c
 ## Features
 
 - **Fan entity**: power on/off, intensity control with optimistic state updates
-- **Schedule management**: enable/disable, start/end time, days, intensity per schedule slot
+- **Schedule management**: create, delete, and edit start/end time, days, intensity per schedule slot
 - **Session control**: start timed fragrance sessions (2, 4, or 8 hours)
 - **Fragrance sensors**: current fragrance name, remaining percentage, fragrance code
 - **QR code image**: generated QR code for the fragrance link (Mini devices)
@@ -89,7 +89,7 @@ Delete (deactivate) a schedule.
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `entity_id` | Yes | The schedule switch entity to delete |
+| `entity_id` | Yes | The delete button entity of the schedule to delete |
 
 ## Blueprints
 

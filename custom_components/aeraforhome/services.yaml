@@ -51,10 +51,10 @@ delete_schedule:
   description: Delete (deactivate) a schedule.
   fields:
     entity_id:
-      name: Schedule switch
-      description: The schedule switch entity to delete.
+      name: Schedule
+      description: The delete button entity of the schedule to delete.
       required: true
       selector:
         entity:
           integration: aeraforhome
-          domain: switch
+          domain: button
