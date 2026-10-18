@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.5](https://github.com/zackwag/aeraforhome-ha/compare/v1.2.4...v1.2.5) (2026-10-18)
+
+
+### Bug Fixes
+
+* keep schedule entities when a schedule fetch fails ([#38](https://github.com/zackwag/aeraforhome-ha/issues/38)) ([4974d26](https://github.com/zackwag/aeraforhome-ha/commit/4974d26dddb29317da21838a281d697428b979e6))
+
 ## [1.2.4](https://github.com/zackwag/aeraforhome-ha/compare/v1.2.3...v1.2.4) (2026-10-18)
 
 
