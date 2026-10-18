@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4](https://github.com/zackwag/aeraforhome-ha/compare/v1.2.3...v1.2.4) (2026-10-18)
+
+
+### Bug Fixes
+
+* point delete_schedule selector at schedule delete buttons ([#36](https://github.com/zackwag/aeraforhome-ha/issues/36)) ([50a6110](https://github.com/zackwag/aeraforhome-ha/commit/50a61108e0627c755767761a9c595671a36937a3))
+
 ## [1.2.3](https://github.com/zackwag/aeraforhome-ha/compare/v1.2.2...v1.2.3) (2026-10-15)
 
 
