@@ -25,6 +25,10 @@ async def async_setup_entry(
 
     @callback
     def _sync_entities() -> None:
+        current_keys = {
+            slot.schedule_key for data in coordinator.data.values() for slot in data.schedules
+        }
+        tracked_keys.intersection_update(current_keys)
         new_entities: list[ButtonEntity] = []
         for dsn, data in coordinator.data.items():
             for idx, slot in enumerate(data.schedules):

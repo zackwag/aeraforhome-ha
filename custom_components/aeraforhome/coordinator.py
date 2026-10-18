@@ -60,6 +60,8 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
         self.new_device_callbacks: list[callback] = []
         self.schedule_change_callbacks: list[callback] = []
         self.config_entry_id: str | None = None
+        self._pending_new_dsns: set[str] = set()
+        self._schedules_changed = False
 
     def register_new_device_callback(self, cb: callback) -> None:
         """Register a callback to be called when new devices are discovered."""
@@ -73,6 +75,19 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
         """Force schedules to be re-fetched on next poll."""
         self._last_schedule_fetch = 0.0
 
+    @callback
+    def async_update_listeners(self) -> None:
+        """Run platform callbacks once the new data is in place, then update entities."""
+        if self._pending_new_dsns:
+            new_dsns, self._pending_new_dsns = self._pending_new_dsns, set()
+            for cb in self.new_device_callbacks:
+                cb(new_dsns)
+        if self._schedules_changed:
+            self._schedules_changed = False
+            for cb in self.schedule_change_callbacks:
+                cb()
+        super().async_update_listeners()
+
     async def _async_update_data(self) -> dict[str, AeraDeviceData]:
         try:
             devices = await self.api.get_devices()
@@ -85,23 +100,32 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
             )
 
             result: dict[str, AeraDeviceData] = {}
+            schedule_fetch_failed = False
             for device in devices:
                 if should_fetch_schedules:
-                    schedules = await self._fetch_schedules(device)
-                    self._cached_schedules[device.dsn] = schedules
+                    try:
+                        schedules = await self._fetch_schedules(device)
+                    except AeraApiError:
+                        _LOGGER.debug(
+                            "Failed to fetch schedules for %s, keeping cached schedules",
+                            device.dsn,
+                        )
+                        schedule_fetch_failed = True
+                        schedules = self._cached_schedules.get(device.dsn, [])
+                    else:
+                        self._cached_schedules[device.dsn] = schedules
                 else:
                     schedules = self._cached_schedules.get(device.dsn, [])
                 result[device.dsn] = AeraDeviceData(device=device, schedules=schedules)
 
-            if should_fetch_schedules:
+            if should_fetch_schedules and not schedule_fetch_failed:
                 self._last_schedule_fetch = now
 
             current_dsns = set(result.keys())
             new_dsns = current_dsns - self.known_dsns
             if self.known_dsns and new_dsns:
                 _LOGGER.debug("New Aera devices discovered: %s", new_dsns)
-                for cb in self.new_device_callbacks:
-                    cb(new_dsns)
+                self._pending_new_dsns |= new_dsns
 
             removed_dsns = self.known_dsns - current_dsns
             if self.known_dsns and removed_dsns:
@@ -112,11 +136,10 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
             current_schedule_keys = {
                 slot.schedule_key for data in result.values() for slot in data.schedules
             }
-            if should_fetch_schedules:
-                self._cleanup_orphaned_schedule_entities(current_schedule_keys)
-            if self._known_schedule_keys and current_schedule_keys != self._known_schedule_keys:
-                for cb in self.schedule_change_callbacks:
-                    cb()
+            if should_fetch_schedules and not schedule_fetch_failed:
+                self._cleanup_orphaned_schedule_entities(result)
+            if current_schedule_keys != self._known_schedule_keys:
+                self._schedules_changed = True
             self._known_schedule_keys = current_schedule_keys
 
             return result
@@ -125,16 +148,21 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
         except AeraApiError as err:
             raise UpdateFailed(f"Error communicating with Aera API: {err}") from err
 
-    def _cleanup_orphaned_schedule_entities(self, current_keys: set[int]) -> None:
+    def _cleanup_orphaned_schedule_entities(self, data: dict[str, AeraDeviceData]) -> None:
         """Remove schedule entities that have no matching schedule."""
         if not self.config_entry_id:
             return
+        valid_prefixes = tuple(
+            f"{dsn}_schedule_{slot.schedule_key}_"
+            for dsn, device_data in data.items()
+            for slot in device_data.schedules
+        )
         ent_reg = er.async_get(self.hass)
         entries = er.async_entries_for_config_entry(ent_reg, self.config_entry_id)
         for entry in entries:
             if "_schedule_" not in entry.unique_id:
                 continue
-            if not any(f"_schedule_{key}" in entry.unique_id for key in current_keys):
+            if not entry.unique_id.startswith(valid_prefixes):
                 _LOGGER.debug("Removing orphaned schedule entity %s", entry.entity_id)
                 ent_reg.async_remove(entry.entity_id)
 
@@ -150,13 +178,13 @@ class AeraCoordinator(DataUpdateCoordinator[dict[str, AeraDeviceData]]):
                 dev_reg.async_remove_device(device_entry.id)
 
     async def _fetch_schedules(self, device: AeraDevice) -> list[AeraScheduleSlot]:
-        """Fetch configured schedules and their actions for a device."""
+        """Fetch configured schedules and their actions for a device.
+
+        Raises AeraApiError if the schedule list can't be fetched, so callers
+        can tell a failed fetch apart from a device with no schedules.
+        """
         slots: list[AeraScheduleSlot] = []
-        try:
-            raw_schedules = await self.api.get_schedules(device)
-        except AeraApiError:
-            _LOGGER.debug("Failed to fetch schedules for %s", device.dsn)
-            return slots
+        raw_schedules = await self.api.get_schedules(device)
 
         for sched in raw_schedules:
             if not sched.get("active", False):

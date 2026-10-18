@@ -6,13 +6,34 @@ import pytest
 from aera.api import AeraApiError, AeraAuthError
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import UpdateFailed
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.aeraforhome.const import DOMAIN
 from custom_components.aeraforhome.coordinator import (
     AeraCoordinator,
 )
 
-from .conftest import make_device
+from .conftest import DEVICE_DATA, make_device
+
+DSN = DEVICE_DATA["dsn"]
+
+
+def _raw_schedule(key: int) -> dict:
+    return {
+        "key": key,
+        "active": True,
+        "display_name": f"Schedule {key}",
+        "start_time_each_day": "08:00:00",
+        "end_time_each_day": "12:00:00",
+        "days_of_week": [2, 3, 4, 5, 6],
+    }
+
+
+def _register_schedule_entity(hass: HomeAssistant, entry: MockConfigEntry, unique_id: str) -> str:
+    ent_reg = er.async_get(hass)
+    return ent_reg.async_get_or_create("button", DOMAIN, unique_id, config_entry=entry).entity_id
 
 
 class TestCoordinatorUpdate:
@@ -61,12 +82,45 @@ class TestCoordinatorSchedules:
         assert slots[0].intensity == 7
         assert slots[0].action_key == 10
 
-    async def test_fetch_schedules_api_error_returns_empty(self, hass, mock_api):
+    async def test_fetch_schedules_api_error_propagates(self, hass, mock_api):
         mock_api.get_schedules.side_effect = AeraApiError("fail")
         coordinator = AeraCoordinator(hass, mock_api)
         device = make_device()
-        slots = await coordinator._fetch_schedules(device)
-        assert slots == []
+        with pytest.raises(AeraApiError):
+            await coordinator._fetch_schedules(device)
+
+    async def test_failed_fetch_keeps_cached_schedules_and_entities(self, hass, mock_api):
+        entry = MockConfigEntry(domain=DOMAIN)
+        entry.add_to_hass(hass)
+        coordinator = AeraCoordinator(hass, mock_api)
+        coordinator.config_entry_id = entry.entry_id
+        mock_api.get_schedules.return_value = [_raw_schedule(1)]
+        await coordinator._async_update_data()
+        entity_id = _register_schedule_entity(hass, entry, f"{DSN}_schedule_1_delete")
+
+        coordinator.force_schedule_refresh()
+        mock_api.get_schedules.side_effect = AeraApiError("timeout")
+        data = await coordinator._async_update_data()
+
+        assert [slot.schedule_key for slot in data[DSN].schedules] == [1]
+        assert er.async_get(hass).async_get(entity_id) is not None
+        # The failed fetch is retried on the next poll
+        assert coordinator._last_schedule_fetch == 0.0
+
+    async def test_cleanup_matches_exact_schedule_key(self, hass, mock_api):
+        entry = MockConfigEntry(domain=DOMAIN)
+        entry.add_to_hass(hass)
+        coordinator = AeraCoordinator(hass, mock_api)
+        coordinator.config_entry_id = entry.entry_id
+        kept = _register_schedule_entity(hass, entry, f"{DSN}_schedule_1_delete")
+        orphan = _register_schedule_entity(hass, entry, f"{DSN}_schedule_12_delete")
+
+        mock_api.get_schedules.return_value = [_raw_schedule(1)]
+        await coordinator._async_update_data()
+
+        ent_reg = er.async_get(hass)
+        assert ent_reg.async_get(orphan) is None
+        assert ent_reg.async_get(kept) is not None
 
 
 class TestCoordinatorForceRefresh:
@@ -89,3 +143,30 @@ class TestCoordinatorCallbacks:
         cb = lambda: None
         coordinator.register_schedule_change_callback(cb)
         assert cb in coordinator.schedule_change_callbacks
+
+    async def test_schedule_change_callback_sees_new_data(self, hass, mock_api):
+        coordinator = AeraCoordinator(hass, mock_api)
+        mock_api.get_schedules.return_value = []
+        await coordinator.async_refresh()
+
+        seen: list[list[int]] = []
+        coordinator.register_schedule_change_callback(
+            lambda: seen.append([slot.schedule_key for slot in coordinator.data[DSN].schedules])
+        )
+        mock_api.get_schedules.return_value = [_raw_schedule(1)]
+        coordinator.force_schedule_refresh()
+        await coordinator.async_refresh()
+
+        assert seen == [[1]]
+
+    async def test_new_device_callback_sees_new_data(self, hass, mock_api):
+        coordinator = AeraCoordinator(hass, mock_api)
+        coordinator.known_dsns = {"AC000WOLD000000"}
+
+        seen: list[bool] = []
+        coordinator.register_new_device_callback(
+            lambda dsns: seen.extend(dsn in coordinator.data for dsn in dsns)
+        )
+        await coordinator.async_refresh()
+
+        assert seen == [True]
