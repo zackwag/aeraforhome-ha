@@ -1,6 +1,6 @@
 # Aera for Home - Home Assistant Integration
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
 
 Home Assistant custom integration for [Aera for Home](https://www.theaerastore.com/) smart fragrance diffusers.
 
@@ -23,11 +23,11 @@ Home Assistant custom integration for [Aera for Home](https://www.theaerastore.c
 
 ### HACS (Recommended)
 
+[![Open HACS Repository](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=zackwag&repository=aeraforhome-ha&category=integration)
+
 1. Open HACS in Home Assistant
-2. Click the three dots menu and select "Custom repositories"
-3. Add `https://github.com/zackwag/aeraforhome-ha` as an Integration
-4. Search for "Aera for Home" and install
-5. Restart Home Assistant
+2. Search for "Aera for Home" and install
+3. Restart Home Assistant
 
 ### Manual
 
