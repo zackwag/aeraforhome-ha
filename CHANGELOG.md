@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.9](https://github.com/zackwag/aeraforhome-ha/compare/v1.2.8...v1.2.9) (2026-11-18)
+
+
+### Miscellaneous Chores
+
+* **deps:** update aeraforhome requirement from &gt;=0.4.1 to &gt;=0.4.2 ([#47](https://github.com/zackwag/aeraforhome-ha/issues/47)) ([c8bdf74](https://github.com/zackwag/aeraforhome-ha/commit/c8bdf74dae190359e37fb65008ddca7cf041a98d))
+
 ## [1.2.8](https://github.com/zackwag/aeraforhome-ha/compare/v1.2.7...v1.2.8) (2026-11-11)
 
 
